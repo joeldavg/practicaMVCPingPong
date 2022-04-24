@@ -11,12 +11,25 @@
     self.Board.prototype = {
         get elements() {
             var elements = this.bars;
-            elements.push(this.ball)
+            elements.push(this.ball);
             return elements;
         }
+    }
+})();
+
+(function(){
+    self.Ball = function(x, y, radius, board){
+        this.x = x;
+        this.y = y;
+        this.radius = radius;
+        this.speedX = 0;
+        this.speedY = 0;
+        this.board = board;
+
+        board.ball = this;
+        this.kind = "circle";
 
     }
-
 })();
 
 (function(){
@@ -26,7 +39,7 @@
         this.width = width;
         this.height = height;
         this.board = board;
-        this.board.bars.push(this)
+        this.board.bars.push(this);
         this.kind = "rectangule";
         this.speed = 10;
     }
@@ -39,7 +52,7 @@
             this.y -= this.speed;
         },
         toString: function(){
-            return "x: " + this.x + ", y: " + this.y
+            return "x: " + this.x + ", y: " + this.y;
         }
     }
 
@@ -57,45 +70,69 @@
     }
 
     self.BoardView.prototype = {
+        clean: function() {
+            this.contexto.clearRect(0, 0, this.board.width, this.board.height);
+        },
+
         draw: function(){
             for (var i = this.board.elements.length - 1; i >= 0; i--) {
-                var elemento = this.board.elements[i]
-                draw(this.contexto, elemento)
+                var elemento = this.board.elements[i];
+                draw(this.contexto, elemento);
             }
+        },
+
+        play: function(){
+            this.clean();
+            this.draw();
         }
     }
 
     function draw(contexto, elemento) {
-        if (elemento !== null && elemento.hasOwnProperty("kind")) {
+        // if(elemento !== null && elemento.hasOwnProperty("kind")) {
             switch(elemento.kind) {
                 case "rectangule":
                     contexto.fillRect(elemento.x, elemento.y, elemento.width, elemento.height);
                     break;
+                case "circle":
+                    contexto.beginPath();
+                    contexto.arc(elemento.x, elemento.y, elemento.radius, 0, 7);
+                    contexto.fill();
+                    contexto.closePath();
+                    break;
             }
-        }
+        // }
     }
 
 })();
 
 var board = new Board(800, 400);
-var bar = new Bar(20, 100, 40, 100, board);
-var bar = new Bar(735, 100, 40, 100, board);
+var leftBar = new Bar(20, 100, 40, 100, board);
+var rightBar = new Bar(735, 100, 40, 100, board);
 var canvas = document.getElementById("canvas");
-var boardView = new BoardView(canvas, board)
+var boardView = new BoardView(canvas, board);
+var ball = new Ball(350, 100, 10, board);
+
 
 document.addEventListener("keydown", function(ev){
+    ev.preventDefault
     if (ev.keyCode == 38){
-        bar.up();
+        rightBar.up();
     } else if (ev.keyCode == 40 ) {
-        bar.down();
+        rightBar.down();
+    } else if (ev.keyCode == 87 ) {
+        //W
+        leftBar.up();
+    } else if (ev.keyCode == 83 ) {
+        //S
+        leftBar.down();
     }
-    console.log(""+bar)
-
+    console.log(""+leftBar)
 })
 
-self.addEventListener("load", main)
+window.requestAnimationFrame(controller);
 
-function main() {
-    
-    boardView.draw()
+function controller() {
+    boardView.play();
+    window.requestAnimationFrame(controller);
+
 }

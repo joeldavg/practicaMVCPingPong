@@ -24,10 +24,13 @@
         this.x = x;
         this.y = y;
         this.radius = radius;
-        this.speedX = 1;
+        this.speedX = 2;
         this.speedY = 0;
         this.board = board;
-        this.dirrection = 1;
+        this.dirrection = -1;
+        this.bounceAngle = 0;
+        this.maxBounceAngle = Math.PI / 2;
+        this.speed = 3;
 
         board.ball = this;
         this.kind = "circle";
@@ -37,6 +40,31 @@
         move: function(){
             this.x += (this.speedX * this.dirrection);
             this.y += (this.speedY * this.dirrection);
+        },
+
+        get width() {
+            return this.radius * 2;
+        },
+
+        get height() {
+            return this.radius * 2;
+        },
+
+        collision: function(bar){
+            // Reacciona a la colision con una barra que reciba como parametro
+            var relativeIntersectY = (bar.y + (bar.height/2)) - this.y;
+            var normalizedIntersectY = relativeIntersectY / (bar.height/2);
+
+            this.bounceAngle = normalizedIntersectY * this.maxBounceAngle;
+
+            this.speedY = this.speed * -Math.sin(this.bounceAngle);
+            this.speedX = this.speed * Math.cos(this.bounceAngle);
+
+            if (this.x > (this.board.width/2)) {
+                this.dirrection = -1;
+            } else {
+                this.dirrection = 1;
+            }
         }
     }
 })();
@@ -90,13 +118,49 @@
             }
         },
 
+        checkCollisions: function(){
+            for (var i = this.board.bars.length - 1; i >= 0; i--) {
+                var bar = this.board.bars[i];
+                if (hit(bar, this.board.ball)) {
+                    this.board.ball.collision(bar);
+                }
+
+            }
+        },
+
         play: function(){
             if(this.board.playing) {
                 this.clean();
                 this.draw();
+                this.checkCollisions();
                 this.board.ball.move();
             }
         }
+    }
+
+    function hit(a, b) {
+        // revisa si a, coliciona con  b
+        var hit = false;
+        //Colisiones horizontales
+        if (b.x + b.width >= a.x && b.x < a.x + a.width) {
+            //colisiones verticales
+            if (b.y + b.height >= a.y && b.y < a.y + a.height) {
+                hit = true;
+            }
+        }
+        // Colision de a con b
+        if (b.x <= a.x && b.x + b.width >= a.x + a.width) {
+            if (b.y <= a.y && b.y + b.height >= a.y + a.height) {
+                hit = true;
+            }
+        }
+        // Colision de b con a
+        if (a.x <= b.x && a.x + a.width >= b.x + b.width) {
+            if (a.y <= b.y && a.y + a.height >= b.y + b.height) {
+                hit = true;
+            }
+        }
+        return hit;
     }
 
     function draw(contexto, elemento) {
@@ -150,7 +214,6 @@ document.addEventListener("keydown", function(ev){
 boardView.draw();
 
 window.requestAnimationFrame(controller);
-
 
 function controller() {
     boardView.play();
